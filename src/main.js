@@ -29,11 +29,22 @@ const loadState = () => {
   }
 };
 
-const navigate = (screen) => {
+const navigate = (screen, pushToHistory = true) => {
   state.currentScreen = screen;
+  if (pushToHistory) {
+    window.history.pushState({ screen }, '', '#' + screen);
+  }
   render();
   window.scrollTo(0, 0);
 };
+
+window.addEventListener('popstate', (e) => {
+  if (e.state && e.state.screen) {
+    navigate(e.state.screen, false);
+  } else {
+    navigate('welcome', false);
+  }
+});
 
 // --- LOGIC ---
 
@@ -385,13 +396,15 @@ function attachEvents() {
   if (btnEnter) btnEnter.onclick = () => {
     if (state.game.turnDarts.length === 0) return;
     
+    // Save history of the turn to allow undoing the previous player's turn
+    state.game.history.push(JSON.parse(JSON.stringify({ players: state.players, currentPlayerIndex: state.game.currentPlayerIndex, turnDarts: state.game.turnDarts })));
+
     // Clear turn darts and move to next player
     do {
       state.game.currentPlayerIndex = (state.game.currentPlayerIndex + 1) % state.players.length;
     } while (state.players[state.game.currentPlayerIndex].lives <= 0 && state.gameMode === 'killer' && state.players.filter(p => p.lives > 0).length > 1);
 
     state.game.turnDarts = [];
-    state.game.history = []; // Clear history of the turn to prevent undoing across turns
     render();
   };
 
@@ -418,4 +431,5 @@ function attachEvents() {
 
 const colors = ['#06b6d4', '#ec4899', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
 loadState();
+window.history.replaceState({ screen: state.currentScreen }, '', '#' + state.currentScreen);
 render();
