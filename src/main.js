@@ -117,7 +117,11 @@ const ModesScreen = () => `
     <div class="game-modes" style="grid-template-columns: 1fr; gap: 12px;">
       <div class="mode-card glass" data-mode="301" style="flex-direction: row; justify-content: flex-start; padding: 20px; aspect-ratio: auto;">
         <div style="background: var(--primary-glow); padding: 12px; border-radius: 12px; margin-right: 20px;"><i data-lucide="target" style="color: var(--primary);"></i></div>
-        <div><h3 style="font-weight: 800;">301 / 501</h3><p style="font-size: 0.8rem; color: var(--text-muted);">Le classique</p></div>
+        <div><h3 style="font-weight: 800;">301</h3><p style="font-size: 0.8rem; color: var(--text-muted);">Le classique rapide</p></div>
+      </div>
+      <div class="mode-card glass" data-mode="501" style="flex-direction: row; justify-content: flex-start; padding: 20px; aspect-ratio: auto;">
+        <div style="background: var(--primary-glow); padding: 12px; border-radius: 12px; margin-right: 20px;"><i data-lucide="target" style="color: var(--primary);"></i></div>
+        <div><h3 style="font-weight: 800;">501</h3><p style="font-size: 0.8rem; color: var(--text-muted);">Le vrai classique</p></div>
       </div>
       <div class="mode-card glass" data-mode="cricket" style="flex-direction: row; justify-content: flex-start; padding: 20px; aspect-ratio: auto;">
         <div style="background: var(--accent-glow); padding: 12px; border-radius: 12px; margin-right: 20px;"><i data-lucide="award" style="color: var(--accent);"></i></div>
@@ -231,6 +235,26 @@ const WinnerScreen = (winner) => `
 
 // --- RENDER & LOGIC ---
 
+function startGame(mode) {
+  state.gameMode = mode;
+  const targetNumbers = Array.from({length: 20}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
+  state.players.forEach((p, i) => {
+    p.score = (state.gameMode === '301') ? 301 : (state.gameMode === '501' ? 501 : 0);
+    p.cricket = { 15: 0, 16: 0, 17: 0, 18: 0, 19: 0, 20: 0, 25: 0 };
+    p.cricketScore = 0;
+    p.lives = 3;
+    p.isKiller = false;
+    p.target = targetNumbers[i]; 
+    p.clockTarget = 1; // Start at 1 for Around the Clock
+  });
+  state.game.currentPlayerIndex = 0;
+  state.game.turnDarts = [];
+  state.game.currentMultiplier = 1;
+  state.game.history = [];
+  state.game.winner = null;
+  navigate('game');
+}
+
 function render() {
   if (state.currentScreen === 'welcome') APP.innerHTML = WelcomeScreen();
   else if (state.currentScreen === 'players') APP.innerHTML = PlayersScreen();
@@ -334,22 +358,7 @@ function attachEvents() {
   if (btnNextModes) btnNextModes.onclick = () => navigate('modes');
 
   document.querySelectorAll('.mode-card').forEach(card => card.onclick = () => {
-    state.gameMode = card.dataset.mode;
-    const targetNumbers = Array.from({length: 20}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
-    state.players.forEach((p, i) => {
-      p.score = (state.gameMode === '301') ? 301 : 501;
-      p.cricket = { 15: 0, 16: 0, 17: 0, 18: 0, 19: 0, 20: 0, 25: 0 };
-      p.cricketScore = 0;
-      p.lives = 3;
-      p.isKiller = false;
-      p.target = targetNumbers[i]; 
-      p.clockTarget = 1; // Start at 1 for Around the Clock
-    });
-    state.game.currentPlayerIndex = 0;
-    state.game.turnDarts = [];
-    state.game.currentMultiplier = 1;
-    state.game.history = [];
-    navigate('game');
+    startGame(card.dataset.mode);
   });
 
   document.querySelectorAll('#multiplier-select .kb-btn').forEach(btn => {
@@ -423,7 +432,7 @@ function attachEvents() {
   if (btnQuit) btnQuit.onclick = () => { if(confirm('Quitter la partie ?')) navigate('modes'); };
   
   const btnRestart = document.querySelector('#btn-restart');
-  if (btnRestart) btnRestart.onclick = () => navigate('modes');
+  if (btnRestart) btnRestart.onclick = () => startGame(state.gameMode);
 
   const btnHome = document.querySelector('#btn-home');
   if (btnHome) btnHome.onclick = () => navigate('welcome');
