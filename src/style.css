@@ -38,7 +38,7 @@ body {
   width: 100%;
   height: 100%;
   z-index: -1;
-  background-image: url('/@fs/Users/alexb/.gemini/antigravity/brain/1c601353-3c51-4a56-bd83-fb59d30dad11/dartboard_pro_minimalist_1777464585843.png');
+  background-image: url('/dartboard.png');
   background-size: cover;
   background-position: center;
   /* Add a dark overlay to make text readable */
