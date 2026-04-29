@@ -14,7 +14,8 @@ let state = {
     history: [],
     winner: null,
     turnDarts: [], 
-    currentMultiplier: 1 
+    currentMultiplier: 1,
+    turnScoreInput: ''
   }
 };
 
@@ -58,14 +59,20 @@ const getCricketSymbol = (hits) => {
 // --- SCREENS ---
 
 const WelcomeScreen = () => `
-  <div class="screen welcome" style="justify-content: center;">
-    <div style="text-align: center; margin-bottom: 60px;">
-      <h1 style="font-size: 3.5rem; letter-spacing: -1px; line-height: 1;">FLECHETTE<br><span class="text-gradient">MASTER</span></h1>
-      <p style="color: var(--text-muted); font-weight: 500; margin-top: 10px;">L'app ultime pour vos parties</p>
+  <div class="screen welcome" style="justify-content: center; align-items: center; text-align: center;">
+    <div style="margin-bottom: 50px; position: relative;">
+      <h1 style="font-size: 3.8rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 4px 20px rgba(0,0,0,0.9); line-height: 1; margin-bottom: 10px;">
+        FLECHETTE<br><span style="color: var(--secondary);">MASTER</span>
+      </h1>
+      <div style="background: rgba(0,0,0,0.5); display: inline-block; padding: 4px 16px; border-radius: 20px; border: 1px solid var(--primary);">
+        <p style="color: white; font-weight: 700; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 3px;">
+          Tournament Edition
+        </p>
+      </div>
     </div>
-    <div class="glass" style="padding: 30px; text-align: center; border-radius: 32px; margin: 0 20px;">
-      <button class="btn btn-primary" style="width: 100%; height: 60px; font-size: 1.2rem;" id="btn-start">
-        JOUER MAINTENANT <i data-lucide="play"></i>
+    <div class="glass" style="padding: 40px; text-align: center; border-radius: 32px; width: 100%; max-width: 400px; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+      <button class="btn btn-primary" style="width: 100%; height: 65px; font-size: 1.3rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;" id="btn-start">
+        JOUER <i data-lucide="target" style="width: 24px; height: 24px;"></i>
       </button>
     </div>
   </div>
@@ -127,14 +134,6 @@ const ModesScreen = () => `
         <div style="background: var(--accent-glow); padding: 12px; border-radius: 12px; margin-right: 20px;"><i data-lucide="award" style="color: var(--accent);"></i></div>
         <div><h3 style="font-weight: 800;">CRICKET</h3><p style="font-size: 0.8rem; color: var(--text-muted);">Tactique & Zones</p></div>
       </div>
-      <div class="mode-card glass" data-mode="around-the-clock" style="flex-direction: row; justify-content: flex-start; padding: 20px; aspect-ratio: auto;">
-        <div style="background: var(--primary-glow); padding: 12px; border-radius: 12px; margin-right: 20px;"><i data-lucide="clock" style="color: var(--primary);"></i></div>
-        <div><h3 style="font-weight: 800;">HORLOGE</h3><p style="font-size: 0.8rem; color: var(--text-muted);">De 1 à 20</p></div>
-      </div>
-      <div class="mode-card glass" data-mode="killer" style="flex-direction: row; justify-content: flex-start; padding: 20px; aspect-ratio: auto;">
-        <div style="background: rgba(239, 68, 68, 0.2); padding: 12px; border-radius: 12px; margin-right: 20px;"><i data-lucide="skull" style="color: #ef4444;"></i></div>
-        <div><h3 style="font-weight: 800;">KILLER</h3><p style="font-size: 0.8rem; color: var(--text-muted);">Dernier survivant</p></div>
-      </div>
     </div>
   </div>
 `;
@@ -143,8 +142,6 @@ const GameScreen = () => {
   const currentPlayer = state.players[state.game.currentPlayerIndex];
   const isX01 = state.gameMode === '301' || state.gameMode === '501';
   const isCricket = state.gameMode === 'cricket';
-  const isKiller = state.gameMode === 'killer';
-  const isClock = state.gameMode === 'around-the-clock';
 
   return `
     <div class="screen">
@@ -162,11 +159,8 @@ const GameScreen = () => {
             <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
               <div class="avatar" style="background: ${p.color}; width: 22px; height: 22px; font-size: 0.7rem;">${p.name[0]}</div>
               <div style="flex: 1;">
-                <div style="font-size: 0.8rem; font-weight: 700;">${p.name} ${p.isKiller ? '<span class="killer-tag">KILLER</span>' : ''}</div>
-                ${isKiller ? `<div class="lives-container" style="justify-content: flex-start; margin-top: 2px;">${Array(3).fill(0).map((_, idx) => `<i data-lucide="heart" class="life-heart ${idx >= p.lives ? 'empty' : ''}" style="width: 10px; height: 10px;"></i>`).join('')}</div>` : ''}
+                <div style="font-size: 0.8rem; font-weight: 700;">${p.name}</div>
               </div>
-              ${isKiller ? `<div style="font-size: 0.8rem; color: var(--primary); font-weight: 800; background: rgba(6,182,212,0.1); padding: 2px 6px; border-radius: 6px;">#${p.target}</div>` : ''}
-              ${isClock ? `<div style="font-size: 0.8rem; color: var(--primary); font-weight: 800;">Cible: ${p.clockTarget === 25 ? 'BULL' : p.clockTarget}</div>` : ''}
               <div style="font-size: 1.2rem; font-weight: 800; margin-left: 10px;">
                 ${isX01 ? p.score : (isCricket ? p.cricketScore : '')}
               </div>
@@ -191,29 +185,42 @@ const GameScreen = () => {
       ` : ''}
 
       <div class="glass" style="padding: 15px; margin: 10px 0; text-align: center; border-radius: 24px; flex: 1; display: flex; flex-direction: column;">
-        <div style="display: flex; justify-content: center; gap: 8px; margin-bottom: 15px;">
-          ${Array(3).fill(0).map((_, idx) => `
-            <div class="glass" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; border-width: 2px; border-color: ${idx < state.game.turnDarts.length ? 'var(--primary)' : 'rgba(255,255,255,0.05)'}">
-              <span style="font-weight: 800; font-size: 0.9rem;">
-                ${state.game.turnDarts[idx] ? (state.game.turnDarts[idx].multiplier > 1 ? (state.game.turnDarts[idx].multiplier === 2 ? 'D' : 'T') : '') + (state.game.turnDarts[idx].value === 25 ? 'B' : (state.game.turnDarts[idx].value === 0 ? '-' : state.game.turnDarts[idx].value)) : ''}
-              </span>
-            </div>
-          `).join('')}
-        </div>
+        ${isX01 ? `
+          <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 20px; color: var(--text-muted);">
+            Score de la volée : <br><span style="color: white; font-size: 3rem; font-weight: 800; line-height: 1;">${state.game.turnScoreInput || '0'}</span>
+          </div>
+          <div class="darts-kb" style="grid-template-columns: repeat(3, 1fr); gap: 8px; flex: 1;">
+            ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `<button class="kb-btn numpad" data-val="${n}">${n}</button>`).join('')}
+            <button class="kb-btn" id="kb-del-numpad" style="background: rgba(239,68,68,0.2); color: #ef4444;"><i data-lucide="delete"></i></button>
+            <button class="kb-btn numpad" data-val="0">0</button>
+            <button class="kb-btn" id="kb-bust-numpad" style="background: rgba(245,158,11,0.2); color: #f59e0b; font-size: 0.8rem;">BUST</button>
+            <button class="kb-btn btn-primary" id="kb-enter-numpad" style="grid-column: span 3; height: 60px; margin-top: 4px; font-size: 1.2rem;">VALIDER</button>
+          </div>
+        ` : `
+          <div style="display: flex; justify-content: center; gap: 8px; margin-bottom: 15px;">
+            ${Array(3).fill(0).map((_, idx) => `
+              <div class="glass" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; border-width: 2px; border-color: ${idx < state.game.turnDarts.length ? 'var(--primary)' : 'rgba(255,255,255,0.05)'}">
+                <span style="font-weight: 800; font-size: 0.9rem;">
+                  ${state.game.turnDarts[idx] ? (state.game.turnDarts[idx].multiplier > 1 ? (state.game.turnDarts[idx].multiplier === 2 ? 'D' : 'T') : '') + (state.game.turnDarts[idx].value === 25 ? 'B' : (state.game.turnDarts[idx].value === 0 ? '-' : state.game.turnDarts[idx].value)) : ''}
+                </span>
+              </div>
+            `).join('')}
+          </div>
 
-        <div id="multiplier-select" style="display: flex; gap: 6px; justify-content: center; margin-bottom: 10px;">
-          <button class="kb-btn ${state.game.currentMultiplier === 1 ? 'active' : ''}" data-mult="1" style="flex: 1; height: 44px; font-size: 0.7rem; border-radius: 12px;">SIMPLE</button>
-          <button class="kb-btn ${state.game.currentMultiplier === 2 ? 'active' : ''}" data-mult="2" style="flex: 1; height: 44px; font-size: 0.7rem; border-radius: 12px;">DOUBLE</button>
-          <button class="kb-btn ${state.game.currentMultiplier === 3 ? 'active' : ''}" data-mult="3" style="flex: 1; height: 44px; font-size: 0.7rem; border-radius: 12px;">TRIPLE</button>
-        </div>
+          <div id="multiplier-select" style="display: flex; gap: 6px; justify-content: center; margin-bottom: 10px;">
+            <button class="kb-btn ${state.game.currentMultiplier === 1 ? 'active' : ''}" data-mult="1" style="flex: 1; height: 44px; font-size: 0.7rem; border-radius: 12px;">SIMPLE</button>
+            <button class="kb-btn ${state.game.currentMultiplier === 2 ? 'active' : ''}" data-mult="2" style="flex: 1; height: 44px; font-size: 0.7rem; border-radius: 12px;">DOUBLE</button>
+            <button class="kb-btn ${state.game.currentMultiplier === 3 ? 'active' : ''}" data-mult="3" style="flex: 1; height: 44px; font-size: 0.7rem; border-radius: 12px;">TRIPLE</button>
+          </div>
 
-        <div class="darts-kb" style="grid-template-columns: repeat(4, 1fr); gap: 4px; flex: 1;">
-          ${[20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map(n => `<button class="kb-btn segment" data-val="${n}" style="height: auto; font-size: 0.8rem; border-radius: 10px;">${n}</button>`).join('')}
-          <button class="kb-btn segment" data-val="25" style="border-radius: 10px;">BULL</button>
-          <button class="kb-btn segment" data-val="0" style="border-radius: 10px;">MISS</button>
-          <button class="kb-btn" id="kb-del" style="border-radius: 10px;"><i data-lucide="delete"></i></button>
-          <button class="kb-btn btn-primary" id="kb-enter" style="grid-column: span 4; height: 56px; margin-top: 4px; border-radius: 16px; font-size: 1.1rem;">VALIDER LE TOUR</button>
-        </div>
+          <div class="darts-kb" style="grid-template-columns: repeat(4, 1fr); gap: 4px; flex: 1;">
+            ${[20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map(n => `<button class="kb-btn segment" data-val="${n}" style="height: auto; font-size: 0.8rem; border-radius: 10px;">${n}</button>`).join('')}
+            <button class="kb-btn segment" data-val="25" style="border-radius: 10px;">BULL</button>
+            <button class="kb-btn segment" data-val="0" style="border-radius: 10px;">MISS</button>
+            <button class="kb-btn" id="kb-del" style="border-radius: 10px;"><i data-lucide="delete"></i></button>
+            <button class="kb-btn btn-primary" id="kb-enter" style="grid-column: span 4; height: 56px; margin-top: 4px; border-radius: 16px; font-size: 1.1rem;">VALIDER LE TOUR</button>
+          </div>
+        `}
       </div>
     </div>
   `;
@@ -237,18 +244,14 @@ const WinnerScreen = (winner) => `
 
 function startGame(mode) {
   state.gameMode = mode;
-  const targetNumbers = Array.from({length: 20}, (_, i) => i + 1).sort(() => Math.random() - 0.5);
   state.players.forEach((p, i) => {
     p.score = (state.gameMode === '301') ? 301 : (state.gameMode === '501' ? 501 : 0);
     p.cricket = { 15: 0, 16: 0, 17: 0, 18: 0, 19: 0, 20: 0, 25: 0 };
     p.cricketScore = 0;
-    p.lives = 3;
-    p.isKiller = false;
-    p.target = targetNumbers[i]; 
-    p.clockTarget = 1; // Start at 1 for Around the Clock
   });
   state.game.currentPlayerIndex = 0;
   state.game.turnDarts = [];
+  state.game.turnScoreInput = '';
   state.game.currentMultiplier = 1;
   state.game.history = [];
   state.game.winner = null;
@@ -266,43 +269,15 @@ function render() {
   attachEvents();
 }
 
-function processDart(dart, player) {
-  const score = dart.value * dart.multiplier;
-
-  if (state.gameMode.includes('01')) {
-    const newScore = player.score - score;
-    if (newScore === 0) { player.score = 0; state.game.winner = player; }
-    else if (newScore > 1) player.score = newScore;
-  } 
-  else if (state.gameMode === 'cricket') {
-    if ([15,16,17,18,19,20,25].includes(dart.value)) {
-      const hitsBefore = player.cricket[dart.value];
-      player.cricket[dart.value] += dart.multiplier;
-      
-      if (player.cricket[dart.value] > 3) {
-        const extra = Math.max(0, dart.multiplier - (hitsBefore < 3 ? 3 - hitsBefore : 0));
-        const anyoneOpen = state.players.some(p => p.cricket[dart.value] < 3);
-        if (anyoneOpen) player.cricketScore += dart.value * extra;
-      }
-    }
-  }
-  else if (state.gameMode === 'killer') {
-    if (dart.value === player.target) {
-      player.cricket[player.target] = (player.cricket[player.target] || 0) + dart.multiplier;
-      if (player.cricket[player.target] >= 3) player.isKiller = true;
-    } else if (player.isKiller) {
-      const targetPlayer = state.players.find(p => p.target === dart.value);
-      if (targetPlayer) targetPlayer.lives = Math.max(0, targetPlayer.lives - dart.multiplier);
-    }
-  }
-  else if (state.gameMode === 'around-the-clock') {
-    if (dart.value === player.clockTarget) {
-      if (player.clockTarget === 25) {
-        state.game.winner = player;
-      } else {
-        player.clockTarget++;
-        if (player.clockTarget > 20) player.clockTarget = 25; // Bullseye is final
-      }
+function processCricketDart(dart, player) {
+  if ([15,16,17,18,19,20,25].includes(dart.value)) {
+    const hitsBefore = player.cricket[dart.value];
+    player.cricket[dart.value] += dart.multiplier;
+    
+    if (player.cricket[dart.value] > 3) {
+      const extra = Math.max(0, dart.multiplier - (hitsBefore < 3 ? 3 - hitsBefore : 0));
+      const anyoneOpen = state.players.some(p => p.cricket[dart.value] < 3);
+      if (anyoneOpen) player.cricketScore += dart.value * extra;
     }
   }
 }
@@ -313,15 +288,6 @@ function checkGlobalWinner() {
     const allClosed = [15,16,17,18,19,20,25].every(n => player.cricket[n] >= 3);
     const topScore = state.players.every(p => p.cricketScore <= player.cricketScore);
     if (allClosed && topScore) state.game.winner = player;
-  }
-  if (state.gameMode === 'killer') {
-    const alive = state.players.filter(p => p.lives > 0);
-    if (alive.length === 1) state.game.winner = alive[0];
-  }
-  if (state.gameMode === 'around-the-clock') {
-    if (player.clockTarget === 25 && state.game.turnDarts.some(d => d.value === 25)) {
-       // Already handled in processDart but good to keep double check
-    }
   }
   if (state.game.winner) navigate('winner');
 }
@@ -368,20 +334,19 @@ function attachEvents() {
     };
   });
 
+  // Cricket Segment buttons
   document.querySelectorAll('.kb-btn.segment').forEach(btn => {
     btn.onclick = () => {
       if (state.game.turnDarts.length < 3) {
         const val = parseInt(btn.dataset.val);
         if (val === 25 && state.game.currentMultiplier === 3) return; 
 
-        // Save history before change for undo-ability of a single dart
         state.game.history.push(JSON.parse(JSON.stringify({ players: state.players, currentPlayerIndex: state.game.currentPlayerIndex, turnDarts: state.game.turnDarts })));
         
         const dart = { value: val, multiplier: state.game.currentMultiplier };
         state.game.turnDarts.push(dart);
         
-        // Update immediately!
-        processDart(dart, state.players[state.game.currentPlayerIndex]);
+        processCricketDart(dart, state.players[state.game.currentPlayerIndex]);
         checkGlobalWinner();
 
         state.game.currentMultiplier = 1; 
@@ -404,16 +369,61 @@ function attachEvents() {
   const btnEnter = document.querySelector('#kb-enter');
   if (btnEnter) btnEnter.onclick = () => {
     if (state.game.turnDarts.length === 0) return;
-    
-    // Save history of the turn to allow undoing the previous player's turn
     state.game.history.push(JSON.parse(JSON.stringify({ players: state.players, currentPlayerIndex: state.game.currentPlayerIndex, turnDarts: state.game.turnDarts })));
-
-    // Clear turn darts and move to next player
-    do {
-      state.game.currentPlayerIndex = (state.game.currentPlayerIndex + 1) % state.players.length;
-    } while (state.players[state.game.currentPlayerIndex].lives <= 0 && state.gameMode === 'killer' && state.players.filter(p => p.lives > 0).length > 1);
-
+    state.game.currentPlayerIndex = (state.game.currentPlayerIndex + 1) % state.players.length;
     state.game.turnDarts = [];
+    render();
+  };
+
+  // Numpad events for X01
+  document.querySelectorAll('.numpad').forEach(btn => {
+    btn.onclick = () => {
+      const val = btn.dataset.val;
+      if (state.game.turnScoreInput.length < 3) {
+        let newVal = state.game.turnScoreInput + val;
+        if (parseInt(newVal) > 180) newVal = '180';
+        state.game.turnScoreInput = newVal;
+        render();
+      }
+    };
+  });
+
+  const btnDelNumpad = document.querySelector('#kb-del-numpad');
+  if (btnDelNumpad) btnDelNumpad.onclick = () => {
+    state.game.turnScoreInput = state.game.turnScoreInput.slice(0, -1);
+    render();
+  };
+
+  const btnBustNumpad = document.querySelector('#kb-bust-numpad');
+  if (btnBustNumpad) btnBustNumpad.onclick = () => {
+    state.game.history.push(JSON.parse(JSON.stringify({ players: state.players, currentPlayerIndex: state.game.currentPlayerIndex, turnScoreInput: state.game.turnScoreInput })));
+    state.game.turnScoreInput = '';
+    state.game.currentPlayerIndex = (state.game.currentPlayerIndex + 1) % state.players.length;
+    render();
+  };
+
+  const btnEnterNumpad = document.querySelector('#kb-enter-numpad');
+  if (btnEnterNumpad) btnEnterNumpad.onclick = () => {
+    if (!state.game.turnScoreInput) return;
+    const score = parseInt(state.game.turnScoreInput);
+    if (isNaN(score)) return;
+
+    state.game.history.push(JSON.parse(JSON.stringify({ players: state.players, currentPlayerIndex: state.game.currentPlayerIndex, turnScoreInput: state.game.turnScoreInput })));
+    
+    const player = state.players[state.game.currentPlayerIndex];
+    const newScore = player.score - score;
+    
+    if (newScore === 0) {
+      player.score = 0;
+      state.game.winner = player;
+      navigate('winner');
+      return;
+    } else if (newScore > 0) { // Keep simple for now: 1 is fine if they don't play strict double out, otherwise we can change it. Let's say > 0 is fine.
+      player.score = newScore;
+    } // else bust, score remains same
+
+    state.game.turnScoreInput = '';
+    state.game.currentPlayerIndex = (state.game.currentPlayerIndex + 1) % state.players.length;
     render();
   };
 
@@ -423,7 +433,8 @@ function attachEvents() {
       const last = state.game.history.pop();
       state.players = last.players;
       state.game.currentPlayerIndex = last.currentPlayerIndex;
-      state.game.turnDarts = last.turnDarts;
+      if (last.turnDarts !== undefined) state.game.turnDarts = last.turnDarts;
+      if (last.turnScoreInput !== undefined) state.game.turnScoreInput = last.turnScoreInput;
       render();
     }
   };
