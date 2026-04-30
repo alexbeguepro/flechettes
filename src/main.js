@@ -134,6 +134,10 @@ const ModesScreen = () => `
         <div style="background: var(--accent-glow); padding: 12px; border-radius: 12px; margin-right: 20px;"><i data-lucide="award" style="color: var(--accent);"></i></div>
         <div><h3 style="font-weight: 800;">CRICKET</h3><p style="font-size: 0.8rem; color: var(--text-muted);">Tactique & Zones</p></div>
       </div>
+      <div class="mode-card glass" data-mode="tour-du-monde" style="flex-direction: row; justify-content: flex-start; padding: 20px; aspect-ratio: auto;">
+        <div style="background: var(--accent-glow); padding: 12px; border-radius: 12px; margin-right: 20px;"><i data-lucide="globe" style="color: var(--accent);"></i></div>
+        <div><h3 style="font-weight: 800;">TOUR DU MONDE</h3><p style="font-size: 0.8rem; color: var(--text-muted);">1 à 20 + Bull (en ordre)</p></div>
+      </div>
     </div>
   </div>
 `;
@@ -141,7 +145,9 @@ const ModesScreen = () => `
 const GameScreen = () => {
   const currentPlayer = state.players[state.game.currentPlayerIndex];
   const isX01 = state.gameMode === '301' || state.gameMode === '501';
-  const isCricket = state.gameMode === 'cricket';
+  const isCricketMode = state.gameMode === 'cricket';
+  const isTourDuMonde = state.gameMode === 'tour-du-monde';
+  const tdmSequence = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25];
 
   return `
     <div class="screen">
@@ -161,15 +167,24 @@ const GameScreen = () => {
               <div style="flex: 1;">
                 <div style="font-size: 0.8rem; font-weight: 700;">${p.name}</div>
               </div>
-              <div style="font-size: 1.2rem; font-weight: 800; margin-left: 10px;">
-                ${isX01 ? p.score : (isCricket ? p.cricketScore : '')}
+              <div style="font-size: 1.2rem; font-weight: 800; margin-left: 10px; display: flex; align-items: center; gap: 10px;">
+                ${isX01 ? p.score : (isCricketMode ? p.cricketScore : '')}
+                ${isTourDuMonde ? `
+                  <div style="display: flex; flex-direction: column; align-items: center; line-height: 1;">
+                    <span style="font-size: 0.6rem; color: var(--text-muted); font-weight: 600;">CIBLE</span>
+                    <span style="color: var(--accent);">${p.tdmIndex < tdmSequence.length ? (tdmSequence[p.tdmIndex] === 25 ? 'B' : tdmSequence[p.tdmIndex]) : 'Gagné!'}</span>
+                  </div>
+                  <div style="width: 24px; height: 24px; border: 2px solid rgba(255,255,255,0.1); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; background: rgba(0,0,0,0.3);">
+                    ${getCricketSymbol(p.tdmHits)}
+                  </div>
+                ` : ''}
               </div>
             </div>
           </div>
         `).join('')}
       </div>
 
-      ${isCricket ? `
+      ${isCricketMode ? `
         <div class="glass" style="padding: 10px; margin-top: 10px; border-radius: 16px;">
           <div class="cricket-grid" style="grid-template-columns: 1fr repeat(7, 1fr); gap: 4px;">
             <div class="cricket-header"></div>
@@ -184,10 +199,10 @@ const GameScreen = () => {
         </div>
       ` : ''}
 
-      <div class="glass" style="padding: 15px; margin: 10px 0; text-align: center; border-radius: 24px; flex: 1; display: flex; flex-direction: column;">
+      <div class="glass" style="padding: 15px; margin: 10px 0; text-align: center; border-radius: 24px; ${isX01 ? 'flex: 1;' : ''} display: flex; flex-direction: column;">
         ${isX01 ? `
           <div style="font-size: 1.1rem; font-weight: 600; margin-bottom: 20px; color: var(--text-muted);">
-            Score de la volée : <br><span style="color: white; font-size: 3rem; font-weight: 800; line-height: 1;">${state.game.turnScoreInput || '0'}</span>
+            Score de la volée : <br><span id="turn-score-display" style="color: white; font-size: 3rem; font-weight: 800; line-height: 1; display: inline-block; min-height: 3rem;">${state.game.turnScoreInput || '0'}</span>
           </div>
           <div class="darts-kb" style="grid-template-columns: repeat(3, 1fr); gap: 8px; flex: 1;">
             ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `<button class="kb-btn numpad" data-val="${n}">${n}</button>`).join('')}
@@ -195,6 +210,24 @@ const GameScreen = () => {
             <button class="kb-btn numpad" data-val="0">0</button>
             <button class="kb-btn" id="kb-bust-numpad" style="background: rgba(245,158,11,0.2); color: #f59e0b; font-size: 0.8rem;">BUST</button>
             <button class="kb-btn btn-primary" id="kb-enter-numpad" style="grid-column: span 3; height: 60px; margin-top: 4px; font-size: 1.2rem;">VALIDER</button>
+          </div>
+        ` : isTourDuMonde ? `
+          <div style="display: flex; justify-content: center; gap: 8px; margin-bottom: 15px;">
+            ${Array(3).fill(0).map((_, idx) => `
+              <div class="glass" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; border-width: 2px; border-color: ${idx < state.game.turnDarts.length ? 'var(--primary)' : 'rgba(255,255,255,0.05)'}">
+                <span style="font-weight: 800; font-size: 0.9rem;">
+                  ${state.game.turnDarts[idx] ? (state.game.turnDarts[idx].value === 0 ? '0' : (state.game.turnDarts[idx].multiplier === 1 ? 'S' : state.game.turnDarts[idx].multiplier === 2 ? 'D' : 'T')) : ''}
+                </span>
+              </div>
+            `).join('')}
+          </div>
+          <div class="darts-kb" style="grid-template-columns: 1fr 1fr; gap: 8px; flex: 1;">
+            <button class="kb-btn tdm-btn" data-mult="0" style="height: 60px; background: rgba(255,255,255,0.05);">RATÉ (0)</button>
+            <button class="kb-btn tdm-btn" data-mult="1" style="height: 60px; background: rgba(16, 185, 129, 0.2); color: #10b981;">SIMPLE (1)</button>
+            <button class="kb-btn tdm-btn" data-mult="2" style="height: 60px; background: rgba(245, 158, 11, 0.2); color: #f59e0b;">DOUBLE (2)</button>
+            <button class="kb-btn tdm-btn" data-mult="3" style="height: 60px; background: rgba(239, 68, 68, 0.2); color: #ef4444;">TRIPLE (3)</button>
+            <button class="kb-btn" id="kb-del-tdm" style="grid-column: span 1; height: 56px;"><i data-lucide="delete"></i></button>
+            <button class="kb-btn btn-primary" id="kb-enter-tdm" style="grid-column: span 1; height: 56px;">VALIDER</button>
           </div>
         ` : `
           <div style="display: flex; justify-content: center; gap: 8px; margin-bottom: 15px;">
@@ -246,7 +279,13 @@ function startGame(mode) {
   state.gameMode = mode;
   state.players.forEach((p, i) => {
     p.score = (state.gameMode === '301') ? 301 : (state.gameMode === '501' ? 501 : 0);
-    p.cricket = { 15: 0, 16: 0, 17: 0, 18: 0, 19: 0, 20: 0, 25: 0 };
+    p.cricket = {};
+    if (state.gameMode === 'cricket') {
+      [15,16,17,18,19,20,25].forEach(n => p.cricket[n] = 0);
+    } else if (state.gameMode === 'tour-du-monde') {
+      p.tdmIndex = 0;
+      p.tdmHits = 0;
+    }
     p.cricketScore = 0;
   });
   state.game.currentPlayerIndex = 0;
@@ -270,7 +309,7 @@ function render() {
 }
 
 function processCricketDart(dart, player) {
-  if ([15,16,17,18,19,20,25].includes(dart.value)) {
+  if ([15, 16, 17, 18, 19, 20, 25].includes(dart.value)) {
     const hitsBefore = player.cricket[dart.value];
     player.cricket[dart.value] += dart.multiplier;
     
@@ -282,12 +321,30 @@ function processCricketDart(dart, player) {
   }
 }
 
+function processTourDuMondeDart(dart, player) {
+  const tdmSequence = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25];
+  if (player.tdmIndex >= tdmSequence.length) return; // already finished
+  
+  if (dart.value === tdmSequence[player.tdmIndex]) {
+    player.tdmHits += dart.multiplier;
+    if (player.tdmHits >= 3) {
+      player.tdmIndex++;
+      player.tdmHits = 0; // overflow hits don't carry over
+    }
+  }
+}
+
 function checkGlobalWinner() {
   const player = state.players[state.game.currentPlayerIndex];
   if (state.gameMode === 'cricket') {
-    const allClosed = [15,16,17,18,19,20,25].every(n => player.cricket[n] >= 3);
+    const allClosed = [15, 16, 17, 18, 19, 20, 25].every(n => player.cricket[n] >= 3);
     const topScore = state.players.every(p => p.cricketScore <= player.cricketScore);
     if (allClosed && topScore) state.game.winner = player;
+  } else if (state.gameMode === 'tour-du-monde') {
+    const tdmSequence = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25];
+    if (player.tdmIndex >= tdmSequence.length) {
+      state.game.winner = player;
+    }
   }
   if (state.game.winner) navigate('winner');
 }
@@ -330,7 +387,8 @@ function attachEvents() {
   document.querySelectorAll('#multiplier-select .kb-btn').forEach(btn => {
     btn.onclick = () => {
       state.game.currentMultiplier = parseInt(btn.dataset.mult);
-      render();
+      document.querySelectorAll('#multiplier-select .kb-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
     };
   });
 
@@ -346,7 +404,9 @@ function attachEvents() {
         const dart = { value: val, multiplier: state.game.currentMultiplier };
         state.game.turnDarts.push(dart);
         
-        processCricketDart(dart, state.players[state.game.currentPlayerIndex]);
+        if (state.gameMode === 'cricket') {
+          processCricketDart(dart, state.players[state.game.currentPlayerIndex]);
+        }
         checkGlobalWinner();
 
         state.game.currentMultiplier = 1; 
@@ -355,8 +415,28 @@ function attachEvents() {
     };
   });
 
-  const btnDel = document.querySelector('#kb-del');
-  if (btnDel) btnDel.onclick = () => {
+  // Tour du Monde buttons
+  document.querySelectorAll('.tdm-btn').forEach(btn => {
+    btn.onclick = () => {
+      if (state.game.turnDarts.length < 3) {
+        const mult = parseInt(btn.dataset.mult);
+        state.game.history.push(JSON.parse(JSON.stringify({ players: state.players, currentPlayerIndex: state.game.currentPlayerIndex, turnDarts: state.game.turnDarts })));
+        
+        const player = state.players[state.game.currentPlayerIndex];
+        const tdmSequence = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25];
+        const target = player.tdmIndex < tdmSequence.length ? tdmSequence[player.tdmIndex] : 0;
+        
+        const dart = { value: mult > 0 ? target : 0, multiplier: mult > 0 ? mult : 1 };
+        state.game.turnDarts.push(dart);
+        
+        processTourDuMondeDart(dart, player);
+        checkGlobalWinner();
+        render();
+      }
+    };
+  });
+
+  const undoDart = () => {
     if (state.game.history.length > 0) {
       const last = state.game.history.pop();
       state.players = last.players;
@@ -365,15 +445,22 @@ function attachEvents() {
       render();
     }
   };
+  const btnDel = document.querySelector('#kb-del');
+  if (btnDel) btnDel.onclick = undoDart;
+  const btnDelTdm = document.querySelector('#kb-del-tdm');
+  if (btnDelTdm) btnDelTdm.onclick = undoDart;
 
-  const btnEnter = document.querySelector('#kb-enter');
-  if (btnEnter) btnEnter.onclick = () => {
+  const validateTurn = () => {
     if (state.game.turnDarts.length === 0) return;
     state.game.history.push(JSON.parse(JSON.stringify({ players: state.players, currentPlayerIndex: state.game.currentPlayerIndex, turnDarts: state.game.turnDarts })));
     state.game.currentPlayerIndex = (state.game.currentPlayerIndex + 1) % state.players.length;
     state.game.turnDarts = [];
     render();
   };
+  const btnEnter = document.querySelector('#kb-enter');
+  if (btnEnter) btnEnter.onclick = validateTurn;
+  const btnEnterTdm = document.querySelector('#kb-enter-tdm');
+  if (btnEnterTdm) btnEnterTdm.onclick = validateTurn;
 
   // Numpad events for X01
   document.querySelectorAll('.numpad').forEach(btn => {
@@ -383,7 +470,8 @@ function attachEvents() {
         let newVal = state.game.turnScoreInput + val;
         if (parseInt(newVal) > 180) newVal = '180';
         state.game.turnScoreInput = newVal;
-        render();
+        const display = document.getElementById('turn-score-display');
+        if (display) display.textContent = state.game.turnScoreInput;
       }
     };
   });
@@ -391,7 +479,8 @@ function attachEvents() {
   const btnDelNumpad = document.querySelector('#kb-del-numpad');
   if (btnDelNumpad) btnDelNumpad.onclick = () => {
     state.game.turnScoreInput = state.game.turnScoreInput.slice(0, -1);
-    render();
+    const display = document.getElementById('turn-score-display');
+    if (display) display.textContent = state.game.turnScoreInput || '0';
   };
 
   const btnBustNumpad = document.querySelector('#kb-bust-numpad');
